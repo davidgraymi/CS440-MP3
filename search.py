@@ -1,9 +1,6 @@
 import heapq
 from state import AbstractState
 
-# TODO(IV): copy the best_first_search and backtrack methods from MP1/MP2 here
-
-
 def best_first_search(starting_state: AbstractState) -> list[AbstractState]:
     '''
     Implementation of best first search algorithm
@@ -56,7 +53,16 @@ def backtrack(visited_states: dict, goal_state: AbstractState) -> list[AbstractS
         The last state should have state.is_goal() == True
     '''
     path = []
-    # Your code here ---------------
+    state = goal_state
+    while True:
+        path.insert(0, state)
 
-    # ------------------------------
+        if state not in visited_states:
+            raise ValueError("State has not been visited.")
+
+        parent_state, distance_of_state_from_start = visited_states[state]
+        if distance_of_state_from_start == 0:
+            break
+
+        state = parent_state
     return path

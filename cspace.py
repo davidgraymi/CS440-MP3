@@ -66,7 +66,6 @@ class CSpace2D:
     # from start_config to end_config, excluding the endpoints
     def straight_line_local_planner(self, start_config: np.ndarray,
                                     end_config: np.ndarray) -> np.ndarray | list[np.ndarray]:
-        # TODO(III.5): implement this function
         dir = self.point_to_point_direction(start_config, end_config)
         dist = self.point_to_point_distance(start_config, end_config)
 

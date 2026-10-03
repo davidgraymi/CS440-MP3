@@ -42,10 +42,21 @@ class AbstractState(ABC):
     # The "less than" method ensures that states are comparable
     # self.dist_from_start is g, self.h is h, and self.tiebreak_idx is the tiebreaker
     def __lt__(self, other: AbstractState) -> bool:
-        # TODO(IV): copy over the less than method from MP1/MP2 here
-        # Your code here ---------------
-        raise NotImplementedError # remove this once you've implemented the function
-        # ------------------------------
+        f_self = self.dist_from_start + self.h
+        f_other = other.dist_from_start + other.h
+
+        if f_self < f_other:
+            return True
+        elif f_self == f_other:
+            # Prefer smaller h value
+            if self.h < other.h:
+                return True
+            elif self.h > other.h:
+                return False
+            # Fallback to created first
+            return self.tiebreak_idx < other.tiebreak_idx
+        else:
+            return False
 
     # The "hash" method allows us to keep track of visited states in a dictionary
     # You should hash states based on self.state (and sometimes self.goal, if it can change)

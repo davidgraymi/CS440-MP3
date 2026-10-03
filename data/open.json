@@ -1,0 +1,20 @@
+{
+    "start": [2, 2, 0.0],
+    "goal": [8, 8, 0.0],
+    "robot_width": 2.0,
+    "robot_height": 1.0,
+
+    "velocity": 1.0,
+    "turn_rate": 1.0,
+    "control_duration": 1.0,
+    "dt": 0.1,
+    "goal_tolerance": 1.0,
+
+    "boundary": {
+        "x_min": 0,
+        "x_max": 10,
+        "y_min": 0,
+        "y_max": 10
+    },
+    "obstacles": []
+}

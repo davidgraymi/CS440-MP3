@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+from typing import Callable
+
+from state import AbstractState
+from cspace import CSpace2D
+from search import best_first_search
+import numpy as np
+
+# A version of PRM that only "pre-processes" the the configuration space by sampling a single roadmap graph
+# for future queries the graph is static, so if no path exists in the graph from start to goal we fail instead of trying to add new nodes to the graph
+class OneShotPRM:
+    def __init__(self, cspace: CSpace2D, num_samples: int, num_neighbors: int) -> None:
+        self.cspace = cspace
+        self.num_samples = num_samples
+        self.num_neighbors = num_neighbors
+        # for bookkeeping of known graph distances so that future queries can be answered faster
+        self.known_graph_distances = {}
+
+        # TODO(VII): draw one batch, keep its valid samples, and validate only
+        # the nearest candidate edges for each retained vertex
+        # self.vertices has shape (num_VALID_samples, num_dims)
+        self.vertices = np.empty((0, cspace.cspace_boundary.shape[0]))
+        # dict mapping vertex index to list of (neighbor_index, edge_length) of length AT MOST num_neighbors
+        self.edges = {i: [] for i in range(len(self.vertices))}
+        
+    # Search the graph defined by the vertices and edges using GraphState and best_first_search
+    def search(self, start_config: np.ndarray, goal_config: np.ndarray) -> tuple[list[np.ndarray], float]:
+        # Find nearest vertex to start and goal and validate edge to neighbor, if invalid fail
+        if len(self.vertices) == 0:
+            print("Cannot search an empty PRM graph")
+            return [], -1
+        start_dists = self.cspace.point_to_point_distance(self.vertices, start_config)
+        start_idx = int(np.argmin(start_dists))
+        if not self.cspace.is_valid_edge(start_config, self.vertices[start_idx]):
+            print("Invalid edge from start config to nearest PRM vertex")
+            return [], -1
+        goal_dists = self.cspace.point_to_point_distance(self.vertices, goal_config)
+        goal_idx = int(np.argmin(goal_dists))
+        if not self.cspace.is_valid_edge(self.vertices[goal_idx], goal_config):
+            print("Invalid edge from nearest PRM vertex to goal config")
+            return [], -1
+        if (start_idx, goal_idx) in self.known_graph_distances:
+            path, path_length = self.known_graph_distances[(start_idx, goal_idx)]
+        else:
+            # Use GraphState and best_first_search to find path from start to goal in PRM graph
+            start_state = GraphState(start_idx, goal_idx, 
+                                    dist_from_start=0.0, use_heuristic=True,
+                                    vertices=self.vertices, edges=self.edges,
+                                    vertex_distance=self.cspace.point_to_point_distance)
+            path = best_first_search(start_state)
+            if len(path) == 0:
+                print("Failed to find path in PRM graph")
+                return [], -1
+            # Return full path including start and goal configs, along with path length
+            path_length = path[-1].dist_from_start
+            path = [self.vertices[state.state] for state in path]
+            self.known_graph_distances[(start_idx, goal_idx)] = (path, path_length)
+        
+        if start_dists[start_idx] > 0:
+            path = [start_config] + path
+            path_length += start_dists[start_idx]
+        if goal_dists[goal_idx] > 0:
+            path = path + [goal_config]
+            path_length += goal_dists[goal_idx]
+        return path, path_length
+
+class GraphState(AbstractState):
+    def __init__(self, state: int, goal: int, dist_from_start: float, use_heuristic: bool,
+                 vertices: np.ndarray, edges: dict[int, list[tuple[int, float]]],
+                 vertex_distance: Callable[[np.ndarray, np.ndarray], float]) -> None:
+        # vertices: features associated with each vertex (np.ndarray of shape (num_vertices, num_dims))
+        self.vertices = vertices
+        # edges: dict mapping vertex index to list of neighbor indices and costs
+        self.edges = edges
+        self.vertex_distance = vertex_distance
+        super().__init__(state, goal, dist_from_start, use_heuristic)
+
+    def get_neighbors(self) -> list[GraphState]:
+        return [GraphState(
+            self.edges[self.state][nbr_idx][0],  # neighbor vertex index
+            self.goal,
+            self.dist_from_start + self.edges[self.state][nbr_idx][1],  # cost to neighbor
+            self.use_heuristic,
+            self.vertices, self.edges, self.vertex_distance)
+            for nbr_idx in range(len(self.edges[self.state]))
+        ]
+
+    def is_goal(self) -> bool:
+        return self.state == self.goal
+    
+    # use the graph's supplied distance function
+    def compute_heuristic(self) -> float:
+        return self.vertex_distance(self.vertices[self.state], self.vertices[self.goal])
+    
+    def __hash__(self) -> int:
+        return int(self.state)
+    def __eq__(self, other: GraphState) -> bool:
+        return self.state == other.state    
+
+
+# Use PRM distance over a 2D point-robot projection as a heuristic for 3D CSpace
+# The returned heuristic function will be used by DubinsCarState to guide best-first search in the 3D CSpace
+def create_prm_heuristic(cspace: CSpace2D, num_samples: int = 2000,
+                         num_neighbors: int = 20) -> Callable[[np.ndarray, np.ndarray], float]:
+    # ---- TODO(VIII) ----
+    # Create a PolygonalCSpace whose configurations are just (x, y), using the
+    # same workspace boundary and obstacles as the original cspace. Then create
+    # a OneShotPRM on that 2D point-robot space. The heuristic below queries
+    # the PRM using config[:2] and goal_config[:2]
+    prm = None
+
+    # ----
+    def prm_heuristic(config: np.ndarray, goal_config: np.ndarray) -> float:
+        # return path length from PRM as heuristic
+        path_length = prm.search(config[:2], goal_config[:2])[1]
+        if path_length < 0: # if PRM fails to find a path, fall back to euclidean distance
+            return cspace.point_to_point_distance(config, goal_config)
+        return path_length
+    return prm_heuristic

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>instructions</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="pandoc.css" />
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<h1 id="cs440-online-fall-2026-mp-3-robot-motion-planning">CS440 Online
+Fall 2026, MP 3: Robot Motion Planning</h1>
+<h2 id="due-sunday-october-4-2026-1159-pm-cst">Due: Sunday, October 4,
+2026, 11:59 PM CST</h2>
+<h2 id="i.-overview">I. Overview</h2>
+<p>In this assignment you will implement simplified versions of several
+core motion-planning algorithms. The robot is a planar rectangle that
+translates and rotates in a 2D workspace with polygonal obstacles. You
+will implement configuration-space collision checking, a Dubins-car
+style <code>AbstractState</code>, kinodynamic RRT, one-shot PRM, and a
+PRM-based heuristic for the Dubins-car. As in MP1 and MP2, a large part
+of the assignment is understanding the provided code and how the
+different components interact.</p>
+<h2 id="ii.-getting-started">II. Getting Started</h2>
+<p>To get started, look inside the <code>template/</code> directory. The
+template contains:</p>
+<ul>
+<li><code>cspace.py</code>. You will edit and submit this. It defines
+configuration-space helpers and the rectangular robot collision
+checker</li>
+<li><code>robot.py</code>. You will edit and submit this. It defines the
+unicycle dynamics and <code>DubinsCarState</code></li>
+<li><code>rrt.py</code>. You will edit and submit this. It defines
+kinodynamic RRT</li>
+<li><code>prm.py</code>. You will edit and submit this. It defines
+one-shot PRM and a PRM-based heuristic</li>
+<li><code>search.py</code>. You will edit locally but not submit. Copy
+your MP1/MP2 <code>best_first_search</code> and <code>backtrack</code>
+here</li>
+<li><code>state.py</code>. You will edit locally but not submit. Copy
+your MP1/MP2 <code>AbstractState.__lt__</code> implementation here</li>
+<li><code>main.py</code>. Local entrypoint for running planners and
+visualizations</li>
+<li><code>requirements.txt</code>. Install dependencies from inside
+<code>template/</code> with
+<code>pip install -r requirements.txt</code>. The main new package is
+<code>shapely</code> for polygonal collision checking</li>
+<li><code>data/</code>. JSON files containing workspace and robot
+parameters</li>
+</ul>
+<p>Please ONLY submit <code>cspace.py</code>, <code>robot.py</code>,
+<code>rrt.py</code>, and <code>prm.py</code>.</p>
+<p>This is the first assignment where we will start to use NumPy
+heavily. When working with batches of points, prefer array operations
+over loops. In particular, <code>point_in_boundary</code> and
+<code>sample_n_configs_in_boundary</code> must operate on complete
+arrays rather than looping or using comprehensions.</p>
+<p>For all random choices in this assignment, use NumPy’s module-level
+<code>np.random</code> functions. The provided <code>--seed</code>
+option seeds this generator so that RRT and PRM runs are
+reproducible.</p>
+<h2 id="iii.-cspace">III. CSpace</h2>
+<p>There are 5 <code>TODO(III)</code> blocks in
+<code>cspace.py</code>.</p>
+<p>You will implement a 3D configuration space for a rectangular robot
+in a 2D workspace:</p>
+<ol type="1">
+<li><code>point_in_boundary(x, boundary)</code>: check whether an
+arbitrary-dimensional point is inside an arbitrary-dimensional boundary.
+The boundary has shape <code>(n, 2)</code>, and points exactly on the
+boundary count as inside
+<ul>
+<li>This method must work for any number of dimensions, not just 2D</li>
+<li>You do not need a loop or comprehension over dimensions; you can use
+NumPy broadcasting and array operations like <code>np.all</code> to
+check all dimensions at once</li>
+</ul></li>
+<li><code>sample_n_configs_in_boundary</code>: sample uniformly within
+the CSpace boundary
+<ul>
+<li>You should sample the whole batch at once using NumPy rather than
+looping over configurations</li>
+</ul></li>
+<li><code>forward_kinematics</code>: compute the four rectangle corners
+from <code>(x, y, theta)</code>
+<ul>
+<li>Many valid implementations but a simple one is to…
+<ul>
+<li>Start with a rectangle centered at the origin</li>
+<li>Rotate it by <code>theta</code> <em>counterclockwise</em></li>
+<li>Then translate by <code>(x, y)</code></li>
+</ul></li>
+</ul></li>
+<li><code>is_valid</code>: check CSpace boundary, workspace boundary,
+and obstacle collisions
+<ul>
+<li>Here you will use the <code>shapely</code> library, you may need to
+read through some documentation</li>
+<li>The robot is a rectangle (four corners returned by
+<code>forward_kinematics</code>)</li>
+<li>The obstacles are polygons (sequence of vertices)</li>
+<li>You should:
+<ul>
+<li>first check whether the configuration itself is in the CSpace
+boundary,</li>
+<li>then check whether the rectangle is inside the workspace
+boundary,</li>
+<li>and finally check whether the rectangle intersects any
+obstacles</li>
+</ul></li>
+</ul></li>
+<li><code>straight_line_local_planner</code>: interpolate between
+configurations for edge checking, returning a list of intermediate
+configurations
+<ul>
+<li>The step size between consecutive configs should be
+<code>self.interpolation_delta</code></li>
+<li>Don’t return the start and end configs, only the intermediate
+configs</li>
+<li><code>is_valid_edge</code> checks only these intermediate
+configurations. Its callers are responsible for ensuring the start and
+end configurations themselves are valid</li>
+<li>If there are no intermediates, i.e., if the start and end configs
+are closer than <code>self.interpolation_delta</code>, return an empty
+list or empty array</li>
+<li>Angles wrap around. The shortest direction from
+<code>theta=0.1</code> to <code>theta=2*pi-0.1</code> goes through
+<code>0</code>, not all the way around the circle. This has many
+implications for distance computation, and thus interpolation and
+nearest-neighbor queries. Moreover whenever you find yourself computing
+new angles from old ones (e.g.,
+<code>theta_new = theta_old + delta_theta</code>), you should wrap the
+result to <code>[0, 2*pi)</code> using the modulo operation
+<code>theta % (2 * np.pi)</code></li>
+<li>Use the provided <code>cspace.point_to_point_direction(...)</code>
+and <code>cspace.point_to_point_distance(...)</code> functions when
+interpolating or comparing configurations with angular dimensions to
+ensure proper distance calculations, but in some places you will need to
+implement custom logic</li>
+</ul></li>
+</ol>
+<p>Run local CSpace sanity checks:</p>
+<pre><code>python3 cspace.py</code></pre>
+<p>The file currently uses <code>data/clutter.json</code>. You can edit
+that path in the <code>if __name__ == "__main__"</code> block. These
+local checks are not exhaustive so you should definitely consider adding
+more checks there as you debug (e.g., your interpolation logic).</p>
+<h2 id="iv.-copy-code-from-mp1mp2">IV. Copy Code from MP1/MP2</h2>
+<p>There are 2 <code>TODO(IV)</code> blocks, one in
+<code>search.py</code> and one in <code>state.py</code>.</p>
+<p>Copy over your <code>best_first_search</code>,
+<code>backtrack</code>, and <code>AbstractState.__lt__</code>
+implementations from MP1/MP2 in preparation for the next part. Note that
+this is purely for your own testing, the autograder uses its own staff
+copy of search/state and you will not submit these files.</p>
+<h2 id="v.-robot-and-dubinscarstate">V. Robot and DubinsCarState</h2>
+<figure align="center">
+<img src="best_first_search_open_result.png" width="200">
+<img src="best_first_search_clutter_result.png" width="200">
+<img src="best_first_search_narrow_passage_result.png" width="200">
+<img src="best_first_search_harder_passage_result.png" width="200">
+<figcaption align="center">
+<b>Best first search on a Dubins car in four environments.</b>
+</figcaption>
+</figure>
+<p>There are 4 <code>TODO(V)</code> blocks in <code>robot.py</code>.</p>
+<p>You will implement:</p>
+<ol type="1">
+<li><code>UnicycleRobot.dynamics</code>: apply one control for a time
+step
+<ul>
+<li>A configuration is <code>(x, y, theta)</code></li>
+<li>A control is <span class="math inline">\((v,
+\dot\theta)=\)</span><code>(velocity, turn_rate)</code></li>
+<li>The unicycle dynamics are: <span class="math display">\[ \dot{x} = v
+\cdot \cos(\theta) \]</span> <span class="math display">\[ \dot{y} = v
+\cdot \sin(\theta) \]</span></li>
+<li>The next state is computed by integrating the dynamics over a time
+step <code>dt</code>: <span class="math display">\[ x_{next} = x +
+\dot{x} \cdot dt \]</span> <span class="math display">\[ y_{next} = y +
+\dot{y} \cdot dt \]</span> <span class="math display">\[ \theta_{next} =
+\theta + \dot{\theta} \cdot dt \]</span></li>
+<li>After updating <code>theta</code>, wrap it back into
+<code>[0, 2*pi)</code> using <code>theta % (2 * np.pi)</code>!</li>
+</ul></li>
+<li><code>Robot.apply_constant_control</code>: repeatedly apply a
+control and return all intermediate configurations
+<ul>
+<li>Use <code>self.dynamics</code> to compute the next configuration at
+each time step</li>
+<li>The time step is <code>self.interpolation_delta</code>, and you
+should apply the control for a total of <code>t</code> time</li>
+<li>If <code>t</code> is not divisible by
+<code>self.interpolation_delta</code>, the final time step will be
+shorter so that the simulation ends exactly at time <code>t</code></li>
+<li>If <code>t</code> is divisible by
+<code>self.interpolation_delta</code>, be careful about adding an extra
+near-zero time step because of floating-point roundoff</li>
+</ul></li>
+<li><code>DubinsCarState.get_neighbors</code>: generate left, straight,
+and right Dubins-car neighbors while rejecting actions that lead to
+invalid intermediate configurations
+<ul>
+<li>When creating a neighboring state, pass along the same
+<code>goal</code>, <code>use_heuristic</code>, <code>car_params</code>,
+and <code>heuristic_func</code>. Increase <code>dist_from_start</code>
+by <code>control_duration * velocity</code></li>
+</ul></li>
+<li><code>DubinsCarState.is_goal</code>: check whether the current
+configuration is within or exactly on the goal tolerance using
+<code>cspace.point_to_point_distance</code></li>
+</ol>
+<p>Run best-first search with the default Euclidean heuristic:</p>
+<pre><code>python3 main.py --search_type=best_first_search --params_file=data/open.json</code></pre>
+<p>You can replace <code>data/open.json</code> with
+<code>data/clutter.json</code>, <code>data/narrow_passage.json</code>,
+or <code>data/harder_passage.json</code>. To save the visualization
+instead of opening a window, add
+<code>--save_image=best_first_search_open_result.png --no_show</code>.</p>
+<h2 id="vi.-rrt">VI. RRT</h2>
+<figure align="center">
+<img src="rrt_open_result.png" width="200">
+<img src="rrt_clutter_result.png" width="200">
+<img src="rrt_narrow_passage_result.png" width="200">
+<img src="rrt_harder_passage_result.png" width="200">
+<figcaption align="center">
+<b>Example KinodynamicRRT runs. RRT is stochastic, so exact trees can
+differ between runs.</b>
+</figcaption>
+</figure>
+<p>We now move on from best-first search to kinodynamic RRT. We provide
+you with a basic high level algorithm for a guided tree search, namely
+one which iteratively calls <code>select_node</code> and
+<code>expand_node</code> methods to build the tree. We represent the
+tree as a list of numpy configs along with with a dictionary that maps
+indices in this array to their parents (and saving the action that was
+taken from the parent). We then instantiate a child of this class called
+<code>KinodynamicRRT</code> which specifically implements these two
+methods using random sampling and extension towards the random sample.
+Your job is to implement the <code>select_node</code> and
+<code>expand_node</code> methods in <code>rrt.py</code>.</p>
+<p>For <code>select_node</code>, choose the goal with probability
+<code>goal_sample_prob</code>; otherwise call
+<code>cspace.sample_n_configs_in_boundary(1)</code> once. Then
+<em>select</em> the tree node nearest to that sample. For
+<code>expand_node</code>, call
+<code>robot.sample_random_controls(num_control_samples)</code> once,
+simulate each returned control from the selected node, reject invalid
+trajectories, and <em>return the valid endpoint closest to the sampled
+configuration</em>. Do not draw replacement configurations or controls
+after validation. Whenever doing nearest neighbor computations you
+should use the provided <code>cspace.point_to_point_distance(...)</code>
+function to ensure proper distance calculations for angular dimensions.
+Notice that the generic <code>expand_node</code> method in
+<code>GuidedTreeSearch</code> is expected to return a <em>list</em> of
+possible new nodes but our implementation will return at most a single
+expansion, so you will need to wrap the single new node in a list, i.e.,
+your return type should look like
+<code>[(new_config, control_from_parent)]</code>.</p>
+<p>Run RRT:</p>
+<pre><code>python3 main.py --search_type=rrt --params_file=data/open.json --max_iterations=3000 --num_neighbors=10 --rrt_control_duration=1.0 --rrt_goal_sample_prob=0.1</code></pre>
+<p>You can replace the data file or tune the RRT parameters. Add
+<code>--seed=0</code> for a reproducible local run.</p>
+<h2 id="vii.-prm">VII. PRM</h2>
+<figure align="center">
+<img src="prm_open_result.png" width="200">
+<img src="prm_clutter_result.png" width="200">
+<img src="prm_narrow_passage_result.png" width="200">
+<img src="prm_harder_passage_result.png" width="200">
+<figcaption align="center">
+<b>Example one-shot PRM runs - our implementation is “one-shot” in the
+sense that we sample and validate one time rather than iteratively
+building the graph until a path exists. In other words, we are
+preprocessing the CSpace for many possible queries rather than solving a
+single specific one. Notice that PRM does not work for Kinodynamic
+constraints and so these paths are for a rectangular robot that can
+translate and rotate in the plane - a less constrained problem.</b>
+</figcaption>
+</figure>
+<p>There is 1 <code>TODO(VII)</code> in <code>prm.py</code>.</p>
+<p><code>OneShotPRM.__init__</code> should:</p>
+<ol type="1">
+<li>draw exactly <code>num_samples</code> candidate configurations in
+one batch
+<ul>
+<li>sample uniformly at random in the cspace boundary</li>
+</ul></li>
+<li>validate that one batch and keep only its valid configurations as
+<code>self.vertices</code>
+<ul>
+<li>the resulting roadmap may have any number of vertices from zero
+through <code>num_samples</code></li>
+<li>do not draw replacement samples for invalid configurations</li>
+</ul></li>
+<li>for each vertex, identify the nearest
+<code>min(num_neighbors, len(self.vertices) - 1)</code> other vertices
+as its candidate neighbors
+<ul>
+<li>as always, use <code>cspace.point_to_point_distance(...)</code> for
+nearest neighbor computations to ensure proper distance calculations for
+angular dimensions</li>
+<li>validate each candidate edge once and do not consider farther
+vertices when a candidate edge is invalid</li>
+</ul></li>
+<li>save each valid candidate as a directed edge and store its CSpace
+distance as the edge length in <code>self.edges</code></li>
+</ol>
+<p>The sample and candidate sets above are fixed before validation.
+Keeping replacements until you get <code>num_samples</code> valid
+vertices, or checking farther neighbors until you find
+<code>num_neighbors</code> valid edges, changes the required algorithm
+and breaks the local efficiency that PRM is built on. For example, a
+vertex surrounded by obstacles could otherwise require checking every
+other vertex in the graph.</p>
+<p>You may also be tempted to add a <em>reverse edge</em> whenever you
+validate the edge from vertex A to vertex B. This also creates a subtle
+bug - our edge validator <em>is not symmetric</em>! Interpolating in
+increments of <code>self.interpolation_delta</code> from A to B is not
+the same as interpolating from B to A, and one direction may return
+valid while the other is not, <em>even if in continuous space these are
+symmetric</em>. In a different implementation you might ensure your edge
+validator is symmetric (say by checking both directions or ensuring
+symmetric interpolation), but for this assignment our PRM is a directed
+non-symmetric graph.</p>
+<p>Example graph format:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># stores the vertices as configurations in a numpy array of shape (num_valid_vertices, 3)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">self</span>.vertices <span class="op">=</span> np.array([</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">1.0</span>, <span class="fl">1.0</span>, <span class="fl">0.0</span>],</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">2.0</span>, <span class="fl">1.0</span>, <span class="fl">0.2</span>],</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    [<span class="fl">4.0</span>, <span class="fl">2.0</span>, <span class="fl">6.1</span>],</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># stores outgoing edges from each vertex as index, cost/distance</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="va">self</span>.edges <span class="op">=</span> {</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span>: [(<span class="dv">1</span>, <span class="fl">1.02</span>), (<span class="dv">2</span>, <span class="fl">3.15</span>)],</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span>: [(<span class="dv">0</span>, <span class="fl">1.02</span>)],</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="dv">2</span>: [], <span class="co"># note that 0 might not show up as a neighbor of 2 even though 2 is a neighbor of 0</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Run PRM:</p>
+<pre><code>python3 main.py --search_type=prm --params_file=data/open.json --max_iterations=2000 --num_neighbors=20</code></pre>
+<p>As usual, you can replace the data file or tune the PRM parameters.
+Add <code>--seed=0</code> for a reproducible local run.</p>
+<h2 id="viii.-best-first-search-with-prm-heuristic">VIII. Best First
+Search with PRM Heuristic</h2>
+<p>There is 1 <code>TODO(VIII)</code> in <code>prm.py</code>.</p>
+<p>The PRM path is not dynamically feasible for the Dubins car, but it
+can still give useful geometric guidance. You will now build a PRM for a
+2D point-robot projection of the original CSpace, then use the returned
+PRM path length as a heuristic for <code>DubinsCarState</code>.</p>
+<p>Specifically, create a <code>PolygonalCSpace</code> whose
+configurations are just 2-dimensional <code>(x, y)</code>, using the
+same workspace boundary and obstacles as the original CSpace. Remember
+that points on an obstacle boundary count as colliding. The
+<code>cspace_boundary</code> should be the same as the
+<code>workspace_boundary</code> and the projection should use the center
+of the rectangle as the 2D configuration (i.e.,
+<code>config[:2]</code>). Its <code>forward_kinematics</code> should
+return one workspace point, represented as <code>[config[:2]]</code> or
+an array of shape <code>(1, 2)</code>. Then create a
+<code>OneShotPRM</code> on that 2D CSpace. The returned heuristic
+function should query that PRM using the projection of the config and
+projection of the goal (i.e., <code>config[:2]</code> and
+<code>goal_config[:2]</code>). If the PRM query fails, fall back to the
+original CSpace straight-line distance.</p>
+<p>To make the above work you may want to create a new child of the
+<code>PolygonalCSpace</code> class to work for such point robots or even
+modify the original implementation to be more general…</p>
+<p>Run best-first search with the PRM heuristic:</p>
+<pre><code>python3 main.py --search_type=best_first_search --heuristic_type=PRM2D --params_file=data/harder_passage.json --max_iterations=1000 --num_neighbors=20</code></pre>
+<p>The PRM heuristic is intended to provide more useful guidance than
+straight-line distance, especially on <code>harder_passage</code>,
+though wall-clock time may not improve because building and querying the
+roadmap has overhead. As usual, you can replace the data file or tune
+the PRM parameters. Add <code>--seed=0</code> for a reproducible local
+run.</p>
+<h2 id="submission-instructions">Submission Instructions</h2>
+<p>Submit the main part of this assignment by uploading
+<code>cspace.py</code>, <code>robot.py</code>, <code>rrt.py</code>, and
+<code>prm.py</code> to Gradescope. Do not forget to access Gradescope
+from the Launch App button in Coursera so that your grade is
+automatically sync’d.</p>
+<p>Before submitting, make sure to comment out any print statements you
+added for debugging, since extra output can slow down your code on the
+autograder.</p>
+<h2 id="policies">Policies</h2>
+<p>You are expected to be familiar with the general policies on the
+course syllabus, including academic integrity. In particular, this is an
+individual assignment and you may not use external sources to write
+significant parts of your code for you.</p>
+</body>
+</html>

@@ -10,8 +10,7 @@ from matplotlib.axes import Axes
 # Boundary has shape (n, 2), where each row is [min, max]
 # Touching the boundary counts as being inside
 def point_in_boundary(x: np.ndarray, boundary: np.ndarray) -> bool:
-    # TODO(III.1): implement this function, don't use a for loop
-    pass
+    return np.all((boundary[:, 0] <= x) & (x <= boundary[:, 1]))
 
 # Abstract base class for a Configuration Space with a 2D workspace
 class CSpace2D:
@@ -61,15 +60,29 @@ class CSpace2D:
 
     # Return n uniformly random configurations shaped (n, cspace_dim)
     def sample_n_configs_in_boundary(self, n: int) -> np.ndarray:
-        # TODO(III.2): implement this function, don't use a for loop
-        return np.zeros((n, self.cspace_boundary.shape[0]))
+        return np.random.rand(n, self.cspace_boundary.shape[0])
     
     # Return intermediate configurations defining an unvalidated straight-line motion 
     # from start_config to end_config, excluding the endpoints
     def straight_line_local_planner(self, start_config: np.ndarray,
                                     end_config: np.ndarray) -> np.ndarray | list[np.ndarray]:
         # TODO(III.5): implement this function
-        pass
+        dir = self.point_to_point_direction(start_config, end_config)
+        dist = self.point_to_point_distance(start_config, end_config)
+
+        if dist <= self.interpolation_delta:
+            return []
+
+        num_steps = int(np.ceil(dist / self.interpolation_delta))
+        trajectory = []
+        for i in range(1, num_steps):
+            alpha = i / num_steps
+            interpolated_config = start_config + alpha * dir
+            if hasattr(self, 'is_angular') and self.is_angular is not None:
+                interpolated_config[self.is_angular] = interpolated_config[self.is_angular] % (2 * np.pi)
+            trajectory.append(interpolated_config)
+
+        return trajectory
 
     # generic implementation that checks the intermediate configurations returned by the local planner
     # callers are responsible for validating both endpoints
@@ -105,8 +118,18 @@ class PolygonalCSpace(CSpace2D):
     # A configuration is valid if it is in the cspace boundary, the robot is
     # inside the workspace boundary, and the robot does not collide with any obstacle
     def is_valid(self, config: np.ndarray) -> bool:
-        # TODO(III.4): implement this function
-        return False
+        workspace = Polygon((
+            (self.workspace_boundary[0, 0], self.workspace_boundary[1, 0]),
+            (self.workspace_boundary[0, 1], self.workspace_boundary[1, 0]),
+            (self.workspace_boundary[0, 1], self.workspace_boundary[1, 1]),
+            (self.workspace_boundary[0, 0], self.workspace_boundary[1, 1]),
+        ))
+        robot = Polygon(self.forward_kinematics(config))
+        obst = [Polygon(o) for o in self.obstacles]
+
+        return point_in_boundary(config, self.cspace_boundary) and \
+            workspace.contains(robot) and \
+            not any([robot.intersects(o) for o in obst])
 
 # A PolygonalCSpace where the robot is a rectangle that can translate and rotate in the plane (x,y,theta configuration space)
 # Dynamics are handled by Robot classes, not by CSpace
@@ -139,14 +162,22 @@ class RectangularCSpace(PolygonalCSpace):
         
     # Return the four corners of the rectangle at configuration (x, y, theta)
     def forward_kinematics(self, config: np.ndarray) -> np.ndarray:
-        # TODO(III.3): implement this function
         W, H = self.rectangle_width, self.rectangle_height
         # 1. corners of rectangle centered at origin
         corners = np.array([[-W/2,-H/2],
                             [-W/2, H/2],
                             [ W/2, H/2],
                             [ W/2,-H/2]])
-        return corners
+
+        # 2. rotation matrix
+        c = np.cos(config[2])
+        s = np.sin(config[2])
+        R = np.array([[c, -s], 
+                      [s,  c]])
+
+        # 3. rotate and translate in one vectorized step
+        rotated_corners = corners @ R.T
+        return rotated_corners + np.array([config[0], config[1]])
 
 # Load a problem from a JSON file and return the CSpace, start, goal, and data dictionary
 def load_problem(params_file: str) -> tuple[RectangularCSpace, np.ndarray, np.ndarray, dict]:

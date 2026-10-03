@@ -34,8 +34,17 @@ class Robot:
     # and return a list of all intermediate configurations and final configuration
     def apply_constant_control(self, config: np.ndarray, control: np.ndarray, t: float) -> np.ndarray:
         poses = [np.copy(config)]
-        # ---- TODO(V.2): your code here ----
+        # ---- (V.2) ----
+        num_steps_cont = t / self.interpolation_delta
+        num_steps = int(np.ceil(num_steps_cont))
+        time_remaining = t
 
+        for i in range(num_steps):
+            time_remaining -=self.interpolation_delta
+            poses.append(self.dynamics(poses[-1], control, self.interpolation_delta))
+
+        if time_remaining > 0.0:
+            poses.append(self.dynamics(poses[-1], control, time_remaining))
         # ----
         return np.array(poses[1:])  # exclude the initial config from the returned trajectory
 
@@ -56,8 +65,18 @@ class UnicycleRobot(Robot):
         if dt is None:
             dt = self.interpolation_delta
         config = np.copy(config)  # avoid modifying in place
-        # ---- TODO(V.1): your code here ----
+        # ---- (V.1) ----
+        x, y, theta = config
+        v, turn_rate = control
 
+        x_hat = v * np.cos(theta)
+        y_hat = v * np.sin(theta)
+
+        x_next = x + x_hat * dt
+        y_next = y + y_hat * dt
+        theta_next = theta + turn_rate * dt
+        theta_next = theta_next % (2 * np.pi)
+        config = np.array([x_next, y_next, theta_next])
         # ---
         return config
 
@@ -96,15 +115,33 @@ class DubinsCarState(AbstractState):
     def get_neighbors(self) -> list[DubinsCarState]:
         nbrs = []
         for control in self.controls:
-            # ---- TODO(V.3): your code here ----
-            pass
+            # ---- (V.3) ----
+            inter_nbrs = self.car_params.robot.apply_constant_control(
+                self.state,
+                control,
+                self.car_params.control_duration
+            )
+
+            if any([not self.car_params.robot.cspace.is_valid(inter) for inter in inter_nbrs]):
+                continue
+
+            neighbor = DubinsCarState(
+                inter_nbrs[-1],
+                self.goal,
+                self.dist_from_start + self.car_params.control_duration * self.car_params.velocity,
+                self.use_heuristic,
+                self.car_params,
+                self.heuristic_func,
+            )
+
+            nbrs.append(neighbor)
             # ----
         return nbrs
     
     # Return True if this state is within goal tolerance of the goal
     def is_goal(self) -> bool:
-        # ---- TODO(V.4): your code here ----
-        return False
+        # ---- (V.4) ----
+        return np.allclose(self.state, self.goal, atol=self.car_params.goal_tolerance)
         # ---
     
     # Return the heuristic value for this state

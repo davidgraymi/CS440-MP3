@@ -6,6 +6,7 @@ from state import AbstractState
 from cspace import CSpace2D
 from search import best_first_search
 import numpy as np
+import heapq
 
 # A version of PRM that only "pre-processes" the the configuration space by sampling a single roadmap graph
 # for future queries the graph is static, so if no path exists in the graph from start to goal we fail instead of trying to add new nodes to the graph
@@ -17,12 +18,30 @@ class OneShotPRM:
         # for bookkeeping of known graph distances so that future queries can be answered faster
         self.known_graph_distances = {}
 
-        # TODO(VII): draw one batch, keep its valid samples, and validate only
+        # (VII): draw one batch, keep its valid samples, and validate only
         # the nearest candidate edges for each retained vertex
         # self.vertices has shape (num_VALID_samples, num_dims)
-        self.vertices = np.empty((0, cspace.cspace_boundary.shape[0]))
+        samples = cspace.sample_n_configs_in_boundary(num_samples)
+        valid = np.array([cspace.is_valid(sample) for sample in samples], dtype=bool)
+        self.vertices = samples[valid]
+
+        num_vertices = len(self.vertices)
+        k = min(self.num_neighbors, max(0, num_vertices - 1))
+
         # dict mapping vertex index to list of (neighbor_index, edge_length) of length AT MOST num_neighbors
         self.edges = {i: [] for i in range(len(self.vertices))}
+        if k == 0:
+            return
+
+        for i in range(len(self.vertices)):
+            cur = self.vertices[i]
+            dists = cspace.point_to_point_distance(self.vertices, cur)
+            dists[i] = np.inf
+            candidate_indices = np.argpartition(dists, k)[:k]
+            for j in candidate_indices:
+                nbr = self.vertices[j]
+                if cspace.is_valid_edge(cur, nbr):
+                    self.edges[i].append((int(j), float(dists[j])))
         
     # Search the graph defined by the vertices and edges using GraphState and best_first_search
     def search(self, start_config: np.ndarray, goal_config: np.ndarray) -> tuple[list[np.ndarray], float]:

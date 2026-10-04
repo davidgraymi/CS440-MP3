@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import Callable
 
 from state import AbstractState
-from cspace import CSpace2D
+from cspace import CSpace2D, point_in_boundary
 from search import best_first_search
 import numpy as np
-import heapq
+
+from shapely.geometry import Point, Polygon
 
 # A version of PRM that only "pre-processes" the the configuration space by sampling a single roadmap graph
 # for future queries the graph is static, so if no path exists in the graph from start to goal we fail instead of trying to add new nodes to the graph
@@ -118,6 +119,50 @@ class GraphState(AbstractState):
         return self.state == other.state    
 
 
+class PolygonalCSpace(CSpace2D):
+    def __init__(self, workspace_boundary: np.ndarray, cspace_boundary: np.ndarray,
+                 is_angular: np.ndarray, obstacles: list[np.ndarray],
+                 interpolation_delta: float = 0.1) -> None:
+        super().__init__(workspace_boundary, cspace_boundary, is_angular, obstacles, interpolation_delta)
+        # a list of shapely Polygons representing obstacles
+        self.shapely_obstacles = [Polygon(o) for o in obstacles]
+
+    # A configuration is valid if it is in the cspace boundary, the robot is
+    # inside the workspace boundary, and the robot does not collide with any obstacle
+    def is_valid(self, config: np.ndarray) -> bool:
+        robot_pt = Point(config[0], config[1])
+        return (
+            point_in_boundary(config[:2], self.cspace_boundary)
+            and point_in_boundary(config[:2], self.workspace_boundary)
+            and not any(poly.intersects(robot_pt) for poly in self.shapely_obstacles)
+        )
+
+
+class PointCSpace(PolygonalCSpace):
+    def __init__(self,
+                 workspace_boundary: np.ndarray,
+                 obstacles: list[np.ndarray] = [],
+                 interpolation_delta: float = 0.1) -> None:
+        cspace_boundary = np.array(workspace_boundary, copy=True)
+        is_angular = np.array([False, False], dtype=bool)
+        super().__init__(workspace_boundary, cspace_boundary, is_angular, obstacles, interpolation_delta)
+
+    # draw the car at given configuration on given Axes
+    def draw_state(self, ax: Axes, config: np.ndarray, **kwargs: object) -> None:
+        # do forward kinematics to get the four corners of the rectangle in workspace
+        point = self.forward_kinematics(config)
+        # close the rectangle by repeating the first corner at the end
+        ax.plot(point[0], point[1], **kwargs)
+        # draw an arrow to indicate orientation
+        arrow_length = min(self.rectangle_width, self.rectangle_height) / 2
+        ax.arrow(config[0], config[1], arrow_length * np.cos(config[2]), arrow_length * np.sin(config[2]), 
+                    head_width=arrow_length/2, head_length=arrow_length/2, fc='k', ec='k')
+        
+    # Return the 2D center point (x, y) of the rectangle at configuration
+    def forward_kinematics(self, config: np.ndarray) -> np.ndarray:
+        pt = np.asarray(config[:2], dtype=float)
+        return pt.reshape(1, 2)
+
 # Use PRM distance over a 2D point-robot projection as a heuristic for 3D CSpace
 # The returned heuristic function will be used by DubinsCarState to guide best-first search in the 3D CSpace
 def create_prm_heuristic(cspace: CSpace2D, num_samples: int = 2000,
@@ -127,7 +172,17 @@ def create_prm_heuristic(cspace: CSpace2D, num_samples: int = 2000,
     # same workspace boundary and obstacles as the original cspace. Then create
     # a OneShotPRM on that 2D point-robot space. The heuristic below queries
     # the PRM using config[:2] and goal_config[:2]
-    prm = None
+    pcspace = PointCSpace(
+        cspace.workspace_boundary,
+        cspace.obstacles,
+        cspace.interpolation_delta
+    )
+
+    prm = OneShotPRM(
+        pcspace,
+        num_samples,
+        num_neighbors
+    )
 
     # ----
     def prm_heuristic(config: np.ndarray, goal_config: np.ndarray) -> float:

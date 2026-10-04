@@ -42,7 +42,7 @@ class CSpace2D:
     # start and end must have the same final dimension, but they do not need the same shape:
     # for example, start can be a batch of points with shape (m, n) while end has shape (n,)
     def point_to_point_direction(self, start: np.ndarray, end: np.ndarray) -> np.ndarray:
-        assert start.shape[-1] == end.shape[-1], "start and end must have the same final dimension"
+        assert start.shape[-1] == end.shape[-1], f"start and end must have the same final dimension: {start.shape} & {end.shape}"
         direction = np.asarray(end, dtype=float) - np.asarray(start, dtype=float)
         if len(direction.shape) == 1:
             direction[self.is_angular] = (direction[self.is_angular] + np.pi) % (2 * np.pi) - np.pi
@@ -131,11 +131,10 @@ class PolygonalCSpace(CSpace2D):
             (self.workspace_boundary[0, 0], self.workspace_boundary[1, 1]),
         ))
         robot = Polygon(self.forward_kinematics(config))
-        obst = [Polygon(o) for o in self.obstacles]
 
         return point_in_boundary(config, self.cspace_boundary) and \
             workspace.contains(robot) and \
-            not any([robot.intersects(o) for o in obst])
+            not any([robot.intersects(o) for o in self.shapely_obstacles])
 
 # A PolygonalCSpace where the robot is a rectangle that can translate and rotate in the plane (x,y,theta configuration space)
 # Dynamics are handled by Robot classes, not by CSpace

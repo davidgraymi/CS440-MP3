@@ -40,10 +40,10 @@ class Robot:
         time_remaining = t
 
         for i in range(num_steps):
-            time_remaining -=self.interpolation_delta
+            time_remaining -= self.interpolation_delta
             poses.append(self.dynamics(poses[-1], control, self.interpolation_delta))
 
-        if time_remaining > 0.0:
+        if not np.isclose(time_remaining, 0.0):
             poses.append(self.dynamics(poses[-1], control, time_remaining))
         # ----
         return np.array(poses[1:])  # exclude the initial config from the returned trajectory

@@ -60,24 +60,31 @@ class CSpace2D:
 
     # Return n uniformly random configurations shaped (n, cspace_dim)
     def sample_n_configs_in_boundary(self, n: int) -> np.ndarray:
-        return np.random.rand(n, self.cspace_boundary.shape[0])
+        low = self.cspace_boundary[:, 0]
+        high = self.cspace_boundary[:, 1]
+        cspace_dim = self.cspace_boundary.shape[0]
+        return np.random.uniform(low, high, size=(n, cspace_dim))
     
     # Return intermediate configurations defining an unvalidated straight-line motion 
     # from start_config to end_config, excluding the endpoints
     def straight_line_local_planner(self, start_config: np.ndarray,
                                     end_config: np.ndarray) -> np.ndarray | list[np.ndarray]:
-        dir = self.point_to_point_direction(start_config, end_config)
         dist = self.point_to_point_distance(start_config, end_config)
 
         if dist <= self.interpolation_delta:
             return []
 
-        num_steps = int(np.ceil(dist / self.interpolation_delta))
+        direction = self.point_to_point_direction(start_config, end_config)
+        unit_step = (direction / dist) * self.interpolation_delta
+
+        num_steps = int(dist // self.interpolation_delta)
+        if np.isclose(dist, num_steps * self.interpolation_delta):
+            num_steps -= 1
+
         trajectory = []
-        for i in range(1, num_steps):
-            alpha = i / num_steps
-            interpolated_config = start_config + alpha * dir
-            if hasattr(self, 'is_angular') and self.is_angular is not None:
+        for step in range(1, num_steps + 1):
+            interpolated_config = start_config + step * unit_step
+            if hasattr(self, "is_angular") and self.is_angular is not None:
                 interpolated_config[self.is_angular] = interpolated_config[self.is_angular] % (2 * np.pi)
             trajectory.append(interpolated_config)
 

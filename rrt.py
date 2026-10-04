@@ -76,16 +76,56 @@ class KinodynamicRRT(GuidedTreeSearch):
         # we store the random sample used for selection to reuse it during expansion
         self.random_sample = None
 
-    # TODO(VI): implement select_node and expand_node for Kinodynamic RRT
+    # (VI): implement select_node and expand_node for Kinodynamic RRT
     
     # Sample either the goal or one cspace configuration, then return the tree
     # node nearest to that sample using wrapped cspace distance
     def select_node(self) -> int:
-        pass
+        prob = np.random.random_sample()
+        if prob <=  self.goal_sample_prob:
+            self.random_sample = self.goal_config
+        else:
+            self.random_sample = self.robot.cspace.sample_n_configs_in_boundary(1)
+
+        node = np.argmin(
+            self.robot.cspace.point_to_point_distance(
+                self.tree_configs,
+                self.random_sample
+            )
+        )
+        return node
 
     # Sample one batch of controls, simulate each for control_duration, reject
     # invalid trajectories, then return the valid endpoint closest to
     # self.random_sample without drawing replacements
     # Return [] if no sampled control is valid, otherwise return [(config, control)]
     def expand_node(self, node_idx: int) -> ExpansionResult:
-        pass
+        ctrls = self.robot.sample_random_controls(self.num_control_samples)
+        node = self.tree_configs[node_idx, :]
+        closest_node = None
+        closest_dist = None
+        closest_control = None
+        for control in ctrls:
+            trajectory = self.robot.apply_constant_control(
+                node,
+                control,
+                self.control_duration
+            )
+
+            if any([not self.robot.cspace.is_valid(inter) for inter in trajectory]):
+                continue
+
+            dist = self.robot.cspace.point_to_point_distance(
+                trajectory[-1],
+                self.random_sample
+            )
+
+            if closest_node is None or dist < closest_dist:
+                closest_node = trajectory[-1]
+                closest_dist = dist
+                closest_control = control
+
+        if closest_node is None or closest_control is None:
+            return []
+
+        return [(closest_node, closest_control)]

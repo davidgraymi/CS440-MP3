@@ -141,6 +141,7 @@ class DubinsCarState(AbstractState):
     # Return True if this state is within goal tolerance of the goal
     def is_goal(self) -> bool:
         # ---- (V.4) ----
+        # maybe use self.robot.cspace.point_to_point_distance
         return np.allclose(self.state, self.goal, atol=self.car_params.goal_tolerance)
         # ---
     

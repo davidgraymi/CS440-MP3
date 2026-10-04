@@ -35,15 +35,14 @@ class Robot:
     def apply_constant_control(self, config: np.ndarray, control: np.ndarray, t: float) -> np.ndarray:
         poses = [np.copy(config)]
         # ---- (V.2) ----
-        num_steps_cont = t / self.interpolation_delta
-        num_steps = int(np.ceil(num_steps_cont))
+        num_steps = int(t // self.interpolation_delta)
         time_remaining = t
 
         for i in range(num_steps):
             time_remaining -= self.interpolation_delta
             poses.append(self.dynamics(poses[-1], control, self.interpolation_delta))
 
-        if not np.isclose(time_remaining, 0.0):
+        if not np.isclose(time_remaining, 0.0) and time_remaining > 0.0:
             poses.append(self.dynamics(poses[-1], control, time_remaining))
         # ----
         return np.array(poses[1:])  # exclude the initial config from the returned trajectory
@@ -142,7 +141,8 @@ class DubinsCarState(AbstractState):
     def is_goal(self) -> bool:
         # ---- (V.4) ----
         # maybe use self.robot.cspace.point_to_point_distance
-        return np.allclose(self.state, self.goal, atol=self.car_params.goal_tolerance)
+        distance = self.car_params.robot.cspace.point_to_point_distance(self.state, self.goal)
+        return np.isclose(distance, np.zeros_like(distance), atol=self.car_params.goal_tolerance)
         # ---
     
     # Return the heuristic value for this state
